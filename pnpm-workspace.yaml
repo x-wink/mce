@@ -1,3 +1,8 @@
 packages:
   - playground
   - packages/*
+  # vendored 上游库（原作者 qq15725 的 modern-* 生态，经 git subtree 接入）
+  - externals/*
+  # modern-openxml 自身是内嵌 monorepo：排除其壳，只纳入真正的叶子包
+  - '!externals/modern-openxml'
+  - externals/modern-openxml/packages/openxml

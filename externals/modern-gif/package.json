@@ -64,7 +64,7 @@
     "prepare": "simple-git-hooks"
   },
   "dependencies": {
-    "modern-palette": "^2.0.0"
+    "modern-palette": "workspace:*"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^3.12.1",

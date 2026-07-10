@@ -57,10 +57,10 @@
   "dependencies": {
     "colord": "^2.9.3",
     "fflate": "^0.8.3",
-    "modern-font": "^0.6.0",
-    "modern-idoc": "^0.12.3",
-    "modern-path2d": "^1.7.0",
-    "modern-text": "^2.0.9"
+    "modern-font": "workspace:*",
+    "modern-idoc": "workspace:*",
+    "modern-path2d": "workspace:*",
+    "modern-text": "workspace:*"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^9.0.0",

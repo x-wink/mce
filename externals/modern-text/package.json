@@ -60,9 +60,9 @@
   },
   "dependencies": {
     "diff": "^9.0.0",
-    "modern-font": "^0.6.2",
-    "modern-idoc": "^0.12.3",
-    "modern-path2d": "^1.8.7"
+    "modern-font": "workspace:*",
+    "modern-idoc": "workspace:*",
+    "modern-path2d": "workspace:*"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^9.1.0",

@@ -53,7 +53,7 @@
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
-    "modern-gif": "^2.1.0"
+    "modern-gif": "workspace:*"
   },
   "devDependencies": {
     "mce": "workspace:*"

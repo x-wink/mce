@@ -54,8 +54,8 @@
     "prepare": "simple-git-hooks"
   },
   "dependencies": {
-    "modern-idoc": "^0.12.3",
-    "modern-text": "^2.0.9"
+    "modern-idoc": "workspace:*",
+    "modern-text": "workspace:*"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^9.0.0",

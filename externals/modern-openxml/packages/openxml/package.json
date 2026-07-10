@@ -69,8 +69,8 @@
   },
   "dependencies": {
     "fflate": "^0.8.3",
-    "modern-idoc": "^0.12.3",
-    "modern-path2d": "^1.8.5"
+    "modern-idoc": "workspace:*",
+    "modern-path2d": "workspace:*"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm lint-staged"
