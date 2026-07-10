@@ -1,0 +1,19 @@
+{
+  "content": [
+    {
+      "content": "text-transform"
+    },
+    {
+      "content": "none",
+      "textTransform": "none"
+    },
+    {
+      "content": "uppercase",
+      "textTransform": "uppercase"
+    },
+    {
+      "content": "lowercase",
+      "textTransform": "lowercase"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "content": [
+    {
+      "content": "default"
+    },
+    {
+      "content": "none",
+      "textDecoration": "none"
+    },
+    {
+      "content": "underline",
+      "color": "#FF0000",
+      "textDecoration": "underline"
+    },
+    {
+      "content": "line-through",
+      "textDecoration": "line-through"
+    }
+  ]
+}
