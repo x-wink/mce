@@ -1,0 +1,81 @@
+{
+  "name": "modern-mp4",
+  "type": "module",
+  "version": "0.2.0",
+  "packageManager": "pnpm@9.9.0",
+  "description": "Encode and decode mp4 frames in the browser, streaming",
+  "author": "wxm",
+  "license": "MIT",
+  "homepage": "https://github.com/qq15725/modern-mp4",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qq15725/modern-mp4.git"
+  },
+  "bugs": {
+    "url": "https://github.com/qq15725/modern-mp4/issues"
+  },
+  "keywords": [
+    "webcodec",
+    "mp4",
+    "video"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "browser": "./dist/index.js",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/*",
+        "./dist/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist",
+    "mp4box.d.ts"
+  ],
+  "scripts": {
+    "build": "vite build && unbuild",
+    "dev": "vite docs",
+    "lint": "eslint src",
+    "test": "vitest",
+    "build:docs": "vite build docs",
+    "version": "conventional-changelog -p angular -i CHANGELOG.md -s && git add CHANGELOG.md",
+    "release": "bumpp package.json --commit \"release: v%s\" --push --all --tag",
+    "typecheck": "tsc --noEmit",
+    "prepare": "simple-git-hooks"
+  },
+  "peerDependencies": {
+    "mp4box": "*"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^3.14.0",
+    "@types/dom-webcodecs": "^0.1.13",
+    "@types/node": "^22.10.7",
+    "bumpp": "^9.10.1",
+    "conventional-changelog-cli": "^5.0.0",
+    "eslint": "^9.18.0",
+    "lint-staged": "^15.4.1",
+    "mp4box": "^0.5.3",
+    "simple-git-hooks": "^2.11.1",
+    "typescript": "^5.7.3",
+    "unbuild": "^3.3.1",
+    "vite": "^6.0.10",
+    "vitest": "^3.0.2"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint-staged"
+  },
+  "lint-staged": {
+    "*": "eslint src --fix"
+  }
+}
