@@ -1,0 +1,249 @@
+import type { ObservableEvents } from 'modern-idoc'
+import type { Resource } from '../core'
+import type { Loader } from './loaders'
+import { idGenerator, Observable } from 'modern-idoc'
+import { createHTMLCanvas, Ticker } from '../core'
+import {
+  FontLoader,
+  GifLoader,
+  JsonLoader,
+  LottieLoader,
+  TextLoader,
+  TextureLoader,
+  VideoLoader,
+} from './loaders'
+import { parseMimeType } from './parseMimeType'
+
+const SUPPORTS_WEAK_REF = 'WeakRef' in globalThis
+
+export type AssetHandler = (blob: Blob, options?: any) => any | Promise<any>
+
+export interface Assets {
+  font: FontLoader
+  gif: GifLoader
+  gifWorkerUrl?: string
+  json: JsonLoader
+  lottie: LottieLoader
+  text: TextLoader
+  texture: TextureLoader
+  video: VideoLoader
+}
+
+export interface AssetsEvents extends ObservableEvents {
+  loaded: [id: string, value: any]
+}
+
+export class Assets extends Observable<AssetsEvents> {
+  defaultHandler: AssetHandler = (blob: Blob) => blob
+  protected _handlers = new Map<string, AssetHandler>()
+  protected _handleing = new Map<string, Promise<any>>()
+  protected _handled = new Map<string, any | WeakRef<any>>()
+  protected _gc = SUPPORTS_WEAK_REF
+    ? new FinalizationRegistry<string>((id) => {
+        const ref = this.get<any>(id)
+        if (ref && 'destroy' in ref) {
+          ref.destroy()
+        }
+        this._handled.delete(id)
+      })
+    : undefined
+
+  constructor() {
+    super()
+
+    if (!SUPPORTS_WEAK_REF) {
+      Ticker.on(this.gc.bind(this), { sort: 2 })
+    }
+  }
+
+  use(loader: Loader): this {
+    loader.install(this)
+    return this
+  }
+
+  register(mimeType: string, handler: AssetHandler): this {
+    this._handlers.set(mimeType, handler)
+    return this
+  }
+
+  fetch(url: string): Promise<Response> {
+    return fetch(url)
+  }
+
+  protected _fixSVG(dataURI: string): string {
+    let xml
+    if (dataURI.includes(';base64,')) {
+      xml = atob(dataURI.split(',')[1])
+    }
+    else {
+      // ;charset=utf-8,
+      xml = decodeURIComponent(dataURI.split(',')[1])
+    }
+    if (typeof DOMParser === 'undefined') {
+      throw new TypeError('SVG handling requires a global DOMParser; polyfill it (e.g. from jsdom/xmldom) in non-browser environments.')
+    }
+    const svg = new DOMParser().parseFromString(xml, 'image/svg+xml').documentElement
+    const width = svg.getAttribute('width')
+    const height = svg.getAttribute('height')
+    const isValidWidth = width && /^[\d.]+$/.test(width)
+    const isValidHeight = height && /^[\d.]+$/.test(height)
+    if (!isValidWidth || !isValidHeight) {
+      const viewBox = svg.getAttribute('viewBox')?.split(' ').map(v => Number(v))
+      if (!isValidWidth) {
+        svg.setAttribute('width', String(viewBox ? viewBox[2] - viewBox[0] : 512))
+      }
+      if (!isValidHeight) {
+        svg.setAttribute('height', String(viewBox ? viewBox[3] - viewBox[1] : 512))
+      }
+    }
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.outerHTML)}`
+  }
+
+  async fetchImageBitmap(url: string | Blob, options?: ImageBitmapOptions): Promise<ImageBitmap> {
+    if (typeof createImageBitmap === 'undefined') {
+      throw new TypeError('fetchImageBitmap requires a global createImageBitmap; polyfill it in non-browser environments or provide image textures as raw buffers.')
+    }
+    if (
+      url instanceof Blob
+      || (typeof url === 'string' && url.startsWith('http'))
+    ) {
+      const blob = url instanceof Blob
+        ? url
+        : await this.fetch(url).then(rep => rep.blob())
+      if (blob.type === 'image/svg+xml') {
+        return blob.text()
+          .then((xml) => {
+            return this.fetchImageBitmap(
+              this._fixSVG(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(xml)}`),
+              options,
+            )
+          })
+      }
+      return createImageBitmap(blob, options)
+    }
+    else {
+      if (url.startsWith('data:image/svg+xml;')) {
+        url = this._fixSVG(url)
+      }
+      if (typeof Image === 'undefined') {
+        throw new TypeError('Image loading requires a global Image constructor; polyfill it in non-browser environments.')
+      }
+      return new Promise<HTMLImageElement>((resolve) => {
+        const img = new Image()
+        img.onerror = () => {
+          console.warn(`Failed load image error: ${url}`)
+          resolve(img)
+        }
+        img.onload = () => {
+          img.decode().finally(() => {
+            resolve(img)
+          })
+        }
+        img.src = url as string
+      }).then((img) => {
+        if (img.complete && img.naturalWidth && img.naturalHeight) {
+          return createImageBitmap(img, options)
+        }
+        else {
+          const canvas = createHTMLCanvas(1, 1)
+          if (!canvas) {
+            throw new Error('createImageBitmap fallback requires a canvas; call setCanvasFactory() in non-browser environments.')
+          }
+          return createImageBitmap(canvas)
+        }
+      })
+    }
+  }
+
+  get<T>(id: string): T | undefined {
+    let result = this._handled.get(id)
+    if (SUPPORTS_WEAK_REF && result instanceof WeakRef) {
+      result = result.deref()
+      if (!result)
+        this._handleing.delete(id)
+    }
+    return result
+  }
+
+  set(id: string, value: any): void {
+    let handled = value
+    if (SUPPORTS_WEAK_REF && typeof value === 'object') {
+      this._gc!.register(value, id)
+      handled = new WeakRef(value)
+    }
+    this._handled.set(id, handled)
+  }
+
+  async awaitBy<T = any>(handler: () => Promise<T>): Promise<T> {
+    const promise = handler()
+    const id = idGenerator()
+    promise.finally(() => this._handleing.delete(id))
+    this._handleing.set(id, promise)
+    return await promise
+  }
+
+  async loadBy<T = Blob>(
+    id: string,
+    handler: () => Promise<T> = () => this.fetch(id).then(rep => rep.blob()) as any,
+  ): Promise<T> {
+    const result = this.get<T>(id) ?? this._handleing.get(id)
+    if (result)
+      return result
+    const promise = handler()
+      .then((result) => {
+        this.set(id, result)
+        this.emit('loaded', id, result)
+        return result
+      })
+      .finally(() => {
+        this._handleing.delete(id)
+      })
+    this._handleing.set(id, promise)
+    return promise
+  }
+
+  async load<T>(url: string, options?: any): Promise<T> {
+    const blob = await this.loadBy(url)
+    let mimeType = parseMimeType(url)
+    if (mimeType === undefined) {
+      mimeType = blob.type?.split(';')[0] ?? undefined
+    }
+    const handler = (
+      mimeType
+        ? this._handlers.get(mimeType)
+        : undefined
+    ) ?? this.defaultHandler
+    return handler(blob, options)
+  }
+
+  async waitUntilLoad(): Promise<void> {
+    while (this._handleing.size > 0) {
+      await Promise.all(
+        Array.from(this._handleing.values())
+          .map(v => v.catch((err) => {
+            console.error(err)
+            return undefined
+          })),
+      )
+    }
+  }
+
+  gc(): void {
+    this._handled.forEach((_, id) => {
+      const resource = this.get<Resource>(id)
+      if (resource && 'destroy' in resource) {
+        resource.destroy()
+      }
+    })
+    this._handled.clear()
+  }
+}
+
+export const assets = new Assets()
+  .use(new FontLoader())
+  .use(new GifLoader())
+  .use(new JsonLoader())
+  .use(new LottieLoader())
+  .use(new TextLoader())
+  .use(new TextureLoader())
+  .use(new VideoLoader())
