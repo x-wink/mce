@@ -56,6 +56,22 @@ export default defineConfig(() => {
           '@mce/psd': fileURLToPath(new URL('../packages/psd/src/index.ts', import.meta.url)),
           'mce/styles': fileURLToPath(new URL('../packages/mce/src/index.ts', import.meta.url)),
           'mce': fileURLToPath(new URL('../packages/mce/src/index.ts', import.meta.url)),
+          // 硬分叉的 modern-* 生态：本地开发直连 externals/ 源码（指向 src 目录，
+          // 子路径导入如 modern-text/deformations 自动落到对应子目录），改库即时 HMR，无需先 build dist。
+          // openxml 的 preset* 子路径是仓库内预置的静态 assets（非 src 产物），需显式且排在 bare 之前优先匹配。
+          'modern-openxml/presetShapeDefinitions': fileURLToPath(new URL('../externals/modern-openxml/packages/openxml/assets/presetShapeDefinitions.js', import.meta.url)),
+          'modern-openxml/presetTextWarpDefinitions': fileURLToPath(new URL('../externals/modern-openxml/packages/openxml/assets/presetTextWarpDefinitions.js', import.meta.url)),
+          'modern-openxml': fileURLToPath(new URL('../externals/modern-openxml/packages/openxml/src', import.meta.url)),
+          'modern-idoc-svg': fileURLToPath(new URL('../externals/modern-idoc-svg/src', import.meta.url)),
+          'modern-idoc': fileURLToPath(new URL('../externals/modern-idoc/src', import.meta.url)),
+          'modern-path2d': fileURLToPath(new URL('../externals/modern-path2d/src', import.meta.url)),
+          'modern-font': fileURLToPath(new URL('../externals/modern-font/src', import.meta.url)),
+          'modern-palette': fileURLToPath(new URL('../externals/modern-palette/src', import.meta.url)),
+          'modern-mp4': fileURLToPath(new URL('../externals/modern-mp4/src', import.meta.url)),
+          'modern-text': fileURLToPath(new URL('../externals/modern-text/src', import.meta.url)),
+          'modern-gif': fileURLToPath(new URL('../externals/modern-gif/src', import.meta.url)),
+          'modern-canvas': fileURLToPath(new URL('../externals/modern-canvas/src', import.meta.url)),
+          'modern-pdf': fileURLToPath(new URL('../externals/modern-pdf/src', import.meta.url)),
         },
       },
     }
