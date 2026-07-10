@@ -1,0 +1,84 @@
+{
+  "name": "modern-pdf",
+  "type": "module",
+  "version": "1.6.0",
+  "packageManager": "pnpm@9.9.0",
+  "description": "Generate PDF in a way that describes the DOM.",
+  "author": "wxm",
+  "license": "MIT",
+  "homepage": "https://github.com/qq15725/modern-pdf",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qq15725/modern-pdf.git"
+  },
+  "bugs": {
+    "url": "https://github.com/qq15725/modern-pdf/issues"
+  },
+  "keywords": [
+    "pdf",
+    "pdf-encode",
+    "pdf-codec",
+    "generate-pdf",
+    "modern-pdf"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "browser": "./dist/index.js",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/*",
+        "./dist/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite docs",
+    "lint": "eslint src",
+    "test": "vitest",
+    "build": "vite build && unbuild",
+    "version": "conventional-changelog -p angular -i CHANGELOG.md -s && git add CHANGELOG.md",
+    "release": "bumpp package.json --commit \"release: v%s\" --push --all --tag",
+    "typecheck": "tsc --noEmit",
+    "prepare": "simple-git-hooks"
+  },
+  "dependencies": {
+    "colord": "^2.9.3",
+    "fflate": "^0.8.3",
+    "modern-font": "^0.6.0",
+    "modern-idoc": "^0.12.3",
+    "modern-path2d": "^1.7.0",
+    "modern-text": "^2.0.9"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^9.0.0",
+    "@types/node": "^25.9.1",
+    "bumpp": "^11.1.0",
+    "conventional-changelog-cli": "^5.0.0",
+    "eslint": "^10.4.0",
+    "lint-staged": "^17.0.5",
+    "simple-git-hooks": "^2.13.1",
+    "typescript": "^6.0.3",
+    "unbuild": "^3.6.1",
+    "vite": "^8.0.14",
+    "vitest": "^4.1.7"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint-staged"
+  },
+  "lint-staged": {
+    "*": "eslint src --fix"
+  }
+}
