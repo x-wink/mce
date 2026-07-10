@@ -1,0 +1,101 @@
+import type { TTF } from '../ttf'
+import { defineColumn } from '../../core'
+import { toUCS2Bytes } from '../../utils'
+import { BaseFont } from '../BaseFont'
+
+/**
+ * @link http://www.w3.org/Submission/EOT
+ */
+export class EOT extends BaseFont {
+  format = 'EmbeddedOpenType'
+  mimeType = 'application/vnd.ms-fontobject'
+  @defineColumn('uint32') declare EOTSize: number
+  @defineColumn('uint32') declare FontDataSize: number
+  @defineColumn('uint32') declare Version: number
+  @defineColumn('uint32') declare Flags: number
+  @defineColumn({ type: 'uint8', size: 10 }) declare FontPANOSE: number[]
+  @defineColumn('uint8') declare Charset: number
+  @defineColumn('uint8') declare Italic: number
+  @defineColumn('uint32') declare Weight: number
+  @defineColumn('uint16') declare fsType: number
+  @defineColumn('uint16') declare MagicNumber: number
+  @defineColumn({ type: 'uint32', size: 4 }) declare UnicodeRange: number[]
+  @defineColumn({ type: 'uint8', size: 8 }) declare CodePageRange: number[]
+  @defineColumn('uint32') declare CheckSumAdjustment: number
+  @defineColumn({ type: 'uint8', size: 16 }) declare Reserved: number[]
+  @defineColumn('uint16') declare Padding1: number
+  // FamilyNameSize
+  // FamilyName
+  // Padding2
+  // StyleNameSize
+  // StyleName
+  // Padding3
+  // VersionNameSize
+  // VersionName
+  // Padding4
+  // FullNameSize
+  // FullName
+  // FontData
+
+  static from(ttf: TTF): EOT {
+    const sfnt = ttf.sfnt
+    const name = sfnt.name
+    const names = name.names
+    const FamilyName = toUCS2Bytes(names.fontFamily || '')
+    const FamilyNameSize = FamilyName.length
+    const StyleName = toUCS2Bytes(names.fontSubFamily || '')
+    const StyleNameSize = StyleName.length
+    const VersionName = toUCS2Bytes(names.version || '')
+    const VersionNameSize = VersionName.length
+    const FullName = toUCS2Bytes(names.fullName || '')
+    const FullNameSize = FullName.length
+
+    const size = 82
+      + 4 + FamilyNameSize
+      + 4 + StyleNameSize
+      + 4 + VersionNameSize
+      + 4 + FullNameSize
+      + 2
+      + ttf.view.byteLength
+
+    const eot = new EOT(new ArrayBuffer(size), 0, size, true)
+    eot.EOTSize = eot.view.byteLength
+    eot.FontDataSize = ttf.view.byteLength
+    eot.Version = 0x00020001 // 0x00010000 / 0x00020001 / 0x00020002
+    eot.Flags = 0
+    eot.Charset = 0x1
+    eot.MagicNumber = 0x504C
+    eot.Padding1 = 0
+    eot.CheckSumAdjustment = sfnt.head.checkSumAdjustment
+
+    const os2 = sfnt.os2
+    if (os2) {
+      eot.FontPANOSE = os2.fontPANOSE
+      eot.Italic = os2.fsSelection
+      eot.Weight = os2.usWeightClass
+      eot.fsType = os2.fsType
+      eot.UnicodeRange = os2.ulUnicodeRange
+      eot.CodePageRange = os2.version > 0 ? os2.ulCodePageRange : []
+    }
+
+    // write names — the 82-byte header was filled via column setters, which
+    // leave the cursor at an arbitrary position, so seek to the header end first.
+    eot.view.seek(82)
+    eot.view.writeUint16(FamilyNameSize)
+    eot.view.writeBytes(FamilyName)
+    eot.view.writeUint16(0)
+    eot.view.writeUint16(StyleNameSize)
+    eot.view.writeBytes(StyleName)
+    eot.view.writeUint16(0)
+    eot.view.writeUint16(VersionNameSize)
+    eot.view.writeBytes(VersionName)
+    eot.view.writeUint16(0)
+    eot.view.writeUint16(FullNameSize)
+    eot.view.writeBytes(FullName)
+    eot.view.writeUint16(0)
+    // rootstring
+    eot.view.writeUint16(0)
+    eot.view.writeBytes(ttf.view)
+    return eot
+  }
+}

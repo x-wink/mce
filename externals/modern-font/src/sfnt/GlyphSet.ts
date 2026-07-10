@@ -1,0 +1,50 @@
+import type { Glyph } from './Glyph'
+import type { SFNT } from './SFNT'
+
+export type GlyphOrLoader = Glyph | undefined
+
+export abstract class GlyphSet {
+  protected _items: GlyphOrLoader[] = []
+
+  constructor(
+    protected _sfnt: SFNT,
+  ) {
+    //
+  }
+
+  protected abstract _get(index: number): Glyph
+
+  get(index: number): Glyph {
+    const _glyph = this._items[index]
+    let glyph: Glyph
+    if (_glyph) {
+      glyph = _glyph
+    }
+    else {
+      glyph = this._get(index)
+      const metric = this._sfnt.hmtx.metrics[index]
+      if (metric) {
+        glyph.advanceWidth = glyph.advanceWidth || metric.advanceWidth
+        glyph.leftSideBearing = glyph.leftSideBearing || metric.leftSideBearing
+      }
+      const vMetric = this._sfnt.vmtx?.metrics[index]
+      if (vMetric) {
+        glyph.advanceHeight = glyph.advanceHeight || vMetric.advanceHeight
+        glyph.topSideBearing = glyph.topSideBearing || vMetric.topSideBearing
+      }
+      const unicodes = this._sfnt.cmap.glyphIndexToUnicodesMap.get(index)
+      if (unicodes) {
+        glyph.unicode ??= unicodes[0]
+        glyph.unicodes ??= unicodes
+      }
+      if (glyph.name == null) {
+        // glyf glyphs have no intrinsic name; CFF glyphs already set theirs from the charset
+        const name = this._sfnt.post?.getGlyphName(index)
+        if (name)
+          glyph.name = name
+      }
+      this._items[index] = glyph
+    }
+    return glyph
+  }
+}

@@ -1,0 +1,348 @@
+import type { Cff } from './Cff'
+import type { Cmap } from './Cmap'
+import type { Glyf } from './Glyf'
+import type { Glyph, GlyphPathCommand, GlyphPathCommandOptions } from './Glyph'
+import type { GlyphSet } from './GlyphSet'
+import type { Gpos } from './Gpos'
+import type { Gsub } from './Gsub'
+import type { Head } from './Head'
+import type { Hhea } from './Hhea'
+import type { Hmtx } from './Hmtx'
+import type { Kern } from './Kern'
+import type { Loca } from './Loca'
+import type { Maxp } from './Maxp'
+import type { Name } from './Name'
+import type { Os2 } from './Os2'
+import type { Post } from './Post'
+import type { SFNTTable } from './SFNTTable'
+import type { Vhea } from './Vhea'
+import type { Vmtx } from './Vmtx'
+import { commandsToPathData } from './Glyph'
+
+export type SFNTTableTag
+// required
+  = | 'cmap' | 'head' | 'hhea' | 'hmtx' | 'maxp' | 'name' | 'OS/2' | 'post'
+  // only TrueType required
+    | 'glyf' | 'loca'
+  // only OpenType required
+    | 'CFF '
+  // optional
+    | 'BASE' | 'CBDT' | 'CBLC' | 'CFF2' | 'COLR' | 'CPAL' | 'DSIG' | 'EBDT'
+    | 'EBLC' | 'EBSC' | 'GDEF' | 'GPOS' | 'GSUB' | 'gasp' | 'JSTF' | 'kern'
+    | 'LTSH' | 'MATH' | 'MERG' | 'Sbix' | 'SVG ' | 'VDMX' | 'vhea' | 'vmtx'
+    | 'VORG' | 'hdmx'
+  // only TrueType optional
+    | 'fpgm' | 'prep' | 'cvt '
+  // only OpenType optional
+    | 'avar' | 'fvar' | 'gvar' | 'HVAR' | 'MVAR' | 'STAT' | 'VVAR'
+    | string
+
+export function defineSFNTTable(tag: SFNTTableTag, prop: string = tag) {
+  return (constructor: any) => {
+    SFNT.tableDefinitions.set(tag, { tag, prop, class: constructor })
+    Object.defineProperty(SFNT.prototype, prop, {
+      get() { return this.get(tag) },
+      set(table) { return this.set(tag, table) },
+      configurable: true,
+      enumerable: true,
+    })
+  }
+}
+
+export class SFNT {
+  declare cmap: Cmap
+  declare head: Head
+  declare hhea: Hhea
+  declare hmtx: Hmtx
+  declare maxp: Maxp
+  declare name: Name
+  declare os2: Os2
+  declare post: Post
+  declare loca: Loca
+  declare glyf: Glyf
+  declare cff: Cff
+
+  declare gpos?: Gpos
+  declare gsub?: Gsub
+  declare kern?: Kern
+  declare vhea?: Vhea
+  declare vmtx?: Vmtx
+
+  static tableDefinitions = new Map<string, {
+    tag: string
+    prop: string
+    class: new (...args: any[]) => SFNTTable
+  }>()
+
+  tables = new Map<string, SFNTTable>()
+  /** Resolved (decompressed) table views; populated lazily as tables are accessed. */
+  tableViews = new Map<SFNTTableTag, DataView<ArrayBuffer>>()
+  /** Tables not yet materialized; each loader decompresses its own table on demand. */
+  protected _viewLoaders = new Map<SFNTTableTag, () => DataView<ArrayBuffer>>()
+
+  /** All present table tags (resolved or still pending) without forcing decompression. */
+  get tableTags(): SFNTTableTag[] {
+    return [...new Set([...this.tableViews.keys(), ...this._viewLoaders.keys()])]
+  }
+
+  hasTable(tag: SFNTTableTag): boolean {
+    return this.tableViews.has(tag) || this._viewLoaders.has(tag)
+  }
+
+  /** Resolve (decompress on demand) and cache the raw view for a tag. */
+  getTableView(tag: SFNTTableTag): DataView<ArrayBuffer> | undefined {
+    let view = this.tableViews.get(tag)
+    if (!view) {
+      const loader = this._viewLoaders.get(tag)
+      if (loader) {
+        view = loader()
+        this.tableViews.set(tag, view)
+        this._viewLoaders.delete(tag)
+      }
+    }
+    return view
+  }
+
+  get hasGlyf(): boolean { return this.hasTable('glyf') }
+  get names(): Record<string, any> { return this.name.names }
+  get unitsPerEm(): number { return this.head.unitsPerEm }
+  get ascender(): number { return this.hhea.ascent }
+  get descender(): number { return this.hhea.descent }
+  get createdTimestamp(): Date { return this.head.created }
+  get modifiedTimestamp(): Date { return this.head.modified }
+  get numGlyphs(): number { return this.maxp.numGlyphs }
+  get unicodes(): Map<number, number[]> { return this.cmap.glyphIndexToUnicodesMap }
+  get glyphs(): GlyphSet { return this.hasGlyf ? this.glyf.glyphs : this.cff.glyphs }
+
+  /** Advance height used when a glyph has no `vmtx` metric (no vertical metrics table). */
+  get defaultAdvanceHeight(): number { return this.ascender + Math.abs(this.descender) }
+
+  charToGlyphIndex(char: string): number {
+    let index = this.cmap.unicodeToGlyphIndexMap.get(char.codePointAt(0)!)
+    if (index === undefined && !this.hasGlyf) {
+      const { encoding, charset } = this.cff
+      // charset.indexOf 未命中返回 -1，而下面 `?? 0` 只兜 undefined、不兜 -1，
+      // 缺字会漏成 -1（非法字形索引）。这里归一到 undefined，让缺字落到 .notdef(0)。
+      const gid = charset.indexOf(encoding[char.codePointAt(0)!])
+      index = gid >= 0 ? gid : undefined
+    }
+    return index ?? 0
+  }
+
+  charToGlyph(char: string): Glyph {
+    return this.glyphs.get(this.charToGlyphIndex(char))
+  }
+
+  /**
+   * Resolve the glyph a GSUB feature substitutes `glyphIndex` with, or return
+   * `glyphIndex` unchanged when there is no substitution (or no GSUB table).
+   * Pass `'vert'`/`'vrt2'` to get a glyph's vertical-writing variant — this is
+   * the font's own mapping, replacing any rotation/heuristic approximation.
+   */
+  getSubstituteGlyphIndex(glyphIndex: number, featureTag: string): number {
+    return this.gsub?.getSingleSubstitutions(featureTag).get(glyphIndex) ?? glyphIndex
+  }
+
+  /**
+   * Apply ligature substitution (GSUB Lookup Type 4) for `featureTag` to a glyph
+   * index run, replacing matched sequences with their ligature glyph. Rules are
+   * tried in table order; the first match at each position wins.
+   */
+  applyLigatures(glyphIndexes: number[], featureTag = 'liga'): number[] {
+    const ligatures = this.gsub?.getLigatures(featureTag)
+    if (!ligatures || !ligatures.size)
+      return glyphIndexes.slice()
+    const out: number[] = []
+    for (let i = 0; i < glyphIndexes.length;) {
+      const rules = ligatures.get(glyphIndexes[i])
+      let matched = false
+      if (rules) {
+        for (const rule of rules) {
+          const n = rule.components.length
+          let ok = true
+          for (let k = 0; k < n; k++) {
+            if (glyphIndexes[i + 1 + k] !== rule.components[k]) {
+              ok = false
+              break
+            }
+          }
+          if (ok) {
+            out.push(rule.ligatureGlyph)
+            i += n + 1
+            matched = true
+            break
+          }
+        }
+      }
+      if (!matched) {
+        out.push(glyphIndexes[i])
+        i++
+      }
+    }
+    return out
+  }
+
+  textToGlyphIndexes(text: string): number[] {
+    const indexes: number[] = []
+    for (const char of text) {
+      indexes.push(this.charToGlyphIndex(char))
+    }
+    return indexes
+  }
+
+  textToGlyphs(text: string): Glyph[] {
+    const _glyphs = this.glyphs
+    const indexes = this.textToGlyphIndexes(text)
+    const length = indexes.length
+    const glyphs: Glyph[] = Array.from({ length })
+    const notdef = _glyphs.get(0)
+    for (let i = 0; i < length; i += 1) {
+      glyphs[i] = _glyphs.get(indexes[i]) || notdef
+    }
+    return glyphs
+  }
+
+  getPathCommands(text: string, x: number, y: number, fontSize?: number, options?: GlyphPathCommandOptions): GlyphPathCommand[] {
+    const commands: GlyphPathCommand[] = []
+    this.forEachGlyph(text, x, y, fontSize, options, (glyph, x, y, fontSize, options) => {
+      commands.push(...glyph.getPathCommands(x, y, fontSize, options, this))
+    })
+    return commands
+  }
+
+  /** SVG path `d` string for `text` (a serialized {@link getPathCommands}). */
+  getPathData(text: string, x: number, y: number, fontSize?: number, options?: GlyphPathCommandOptions, fractionDigits = 2): string {
+    return commandsToPathData(this.getPathCommands(text, x, y, fontSize, options), fractionDigits)
+  }
+
+  /**
+   * Kerning adjustment (font units) between two glyph indices. Prefers the GPOS
+   * `kern` feature (pair adjustment), falling back to the legacy `kern` table.
+   */
+  getKerningValue(leftGlyphIndex: number, rightGlyphIndex: number): number {
+    const gpos = this.gpos?.getKerningValue(leftGlyphIndex, rightGlyphIndex) ?? 0
+    if (gpos)
+      return gpos
+    return this.kern?.getKerningValue(leftGlyphIndex, rightGlyphIndex) ?? 0
+  }
+
+  getAdvanceWidth(text: string, fontSize?: number, options?: GlyphPathCommandOptions): number {
+    return this.forEachGlyph(text, 0, 0, fontSize, options, () => {})
+  }
+
+  /**
+   * Total vertical advance of `text` at `fontSize`, the vertical-writing
+   * counterpart of {@link getAdvanceWidth}. Uses each glyph's `vmtx`
+   * advanceHeight when available, falling back to {@link defaultAdvanceHeight}
+   * (`ascender + |descender|`) for glyphs without one.
+   */
+  getAdvanceHeight(
+    text: string,
+    fontSize = 72,
+    options: GlyphPathCommandOptions & { letterSpacing?: number, tracking?: number } = {},
+  ): number {
+    const fontScale = 1 / this.unitsPerEm * fontSize
+    const defaultAdvanceHeight = this.defaultAdvanceHeight
+    const glyphs = this.textToGlyphs(text)
+    let y = 0
+    for (let i = 0; i < glyphs.length; i += 1) {
+      y += (glyphs[i].advanceHeight || defaultAdvanceHeight) * fontScale
+      if (options.letterSpacing) {
+        y += options.letterSpacing * fontSize
+      }
+      else if (options.tracking) {
+        y += (options.tracking / 1000) * fontSize
+      }
+    }
+    return y
+  }
+
+  forEachGlyph(
+    text: string,
+    x = 0,
+    y = 0,
+    fontSize = 72,
+    options: GlyphPathCommandOptions & { letterSpacing?: number, tracking?: number } = {},
+    callback: (glyph: Glyph, x: number, y: number, fontSize: number, options: GlyphPathCommandOptions) => void,
+  ): number {
+    const fontScale = 1 / this.unitsPerEm * fontSize
+    const glyphs = this.textToGlyphs(text)
+    for (let i = 0; i < glyphs.length; i += 1) {
+      const glyph = glyphs[i]
+      callback.call(this, glyph, x, y, fontSize, options)
+      if (glyph.advanceWidth) {
+        x += glyph.advanceWidth * fontScale
+      }
+      if (options.letterSpacing) {
+        x += options.letterSpacing * fontSize
+      }
+      else if (options.tracking) {
+        x += (options.tracking / 1000) * fontSize
+      }
+    }
+    return x
+  }
+
+  constructor(
+    tableViews?: Record<SFNTTableTag, DataView<ArrayBuffer>> | Map<SFNTTableTag, DataView<ArrayBuffer>>,
+    viewLoaders?: Map<SFNTTableTag, () => DataView<ArrayBuffer>>,
+  ) {
+    if (tableViews) {
+      const map = tableViews instanceof Map ? tableViews : new Map(Object.entries(tableViews))
+      // Store views as-is (no copy); callers needing an owned, mutable copy use clone().
+      map.forEach((view, key) => this.tableViews.set(key, view))
+    }
+    viewLoaders?.forEach((loader, key) => this._viewLoaders.set(key, loader))
+  }
+
+  clone(): SFNT {
+    // Deep copy: resolve every table and give each its own buffer, so the clone
+    // can be mutated (e.g. by minify, which rewrites glyf in place) without
+    // touching the source.
+    const tableViews = new Map<SFNTTableTag, DataView<ArrayBuffer>>()
+    this.tableTags.forEach((tag) => {
+      const view = this.getTableView(tag)!
+      tableViews.set(tag, new DataView(view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength)))
+    })
+    return new SFNT(tableViews)
+  }
+
+  delete(tag: SFNTTableTag): this {
+    const definition = SFNT.tableDefinitions.get(tag)
+    if (!definition)
+      return this
+    this.tableViews.delete(tag)
+    this._viewLoaders.delete(tag)
+    this.tables.delete(definition.prop)
+    return this
+  }
+
+  set(tag: SFNTTableTag, table: SFNTTable): this {
+    const definition = SFNT.tableDefinitions.get(tag)
+    if (definition) {
+      this.tables.set(definition.prop, table)
+    }
+    this.tableViews.set(tag, table.view)
+    this._viewLoaders.delete(tag)
+    return this
+  }
+
+  get(tag: SFNTTableTag): SFNTTable | undefined {
+    const definition = SFNT.tableDefinitions.get(tag)
+    if (!definition)
+      return undefined
+    let table = this.tables.get(definition.prop)
+    if (!table) {
+      const Class = definition.class
+      if (Class) {
+        const view = this.getTableView(tag)
+        if (!view) {
+          return undefined
+        }
+        table = new Class(view.buffer, view.byteOffset, view.byteLength).setSFNT(this) as any
+        this.tables.set(definition.prop, table!)
+      }
+    }
+    return table
+  }
+}
