@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>modern-gif</title>
+  <meta name="description" content="Fastest GIF decoder / encoder. using TypeScript.">
+  <meta name="keywords" content="gif, encoder, decode, animation, browser">
+  <meta name="viewport" content="width=device-width">
+  <meta property="og:title" content="modern-gif">
+  <meta property="og:url" content="https://github.com/qq15725/modern-gif">
+  <meta property="og:description" content="Fastest GIF decoder / encoder. using TypeScript.">
+  <meta property="og:type" content="website">
+  <style>
+    body {
+      background-color: #EEE;
+    }
+
+    header, footer, main {
+      width: 600px;
+      margin: 0 auto;
+    }
+
+    img {
+      display: block;
+      width: 100%;
+    }
+
+    pre {
+      margin-top: 10px;
+      font-family: Menlo, monospace;
+      font-size: 18px;
+      min-height: 200px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>modern-gif</h1>
+    <p>🎨 Fastest GIF decoder / encoder. using TypeScript.</p>
+    <a href="https://github.com/qq15725/modern-gif" target="_blank">Download on GitHub</a>
+  </header>
+
+  <main>
+    <h2>Demo</h2>
+    <div style="position: relative;">
+      <p>
+        <label>Select multiple images or GIFs</label>
+        <input type="file" multiple accept="image/png, image/jpeg, image/gif" />
+      </p>
+      <img class="example" src="/example.gif" />
+      <div>
+        <p>
+          <label>MaxColors</label>
+          <input type="range" step="1" min="2" max="255" value="255" data-name="maxColors">
+          <span class="value">255</span>
+        </p>
+        <p>
+          <label>Delay</label>
+          <input type="range" step="1" min="0" max="1000" value="100" data-name="delay" data-unit="ms">
+          <span class="value">100ms</span>
+        </p>
+        <pre></pre>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import workerUrl from '../dist/worker?url'
+    import { decode, decodeFrames, encode } from '../src'
+
+    const img = document.querySelector('.example')
+    const pre = document.querySelector('pre')
+
+    const props = {
+      maxColors: 255,
+      delay: 100,
+      width: 1,
+      height: 1,
+      frames: [],
+    }
+
+    async function init() {
+      const source = await fetch(img.src).then(res => res.arrayBuffer())
+      const gif = decode(source)
+      props.frames = await decodeFrames(source)
+      props.width = gif.width
+      props.height = gif.height
+      render()
+    }
+
+    async function render() {
+      if (pre.textContent.startsWith('Encoding')) return
+      pre.textContent = 'Encoding...'
+
+      const start = Date.now()
+      const output = await encode({
+        debug: true,
+        workerUrl,
+        width: props.width,
+        height: props.height,
+        maxColors: props.maxColors,
+        frames: props.frames.map(frame => {
+          return {
+            data: frame.data.slice(),
+            delay: props.delay,
+          }
+        }),
+      })
+      const time = Date.now() - start
+
+      const blob = new Blob([output], { type: 'image/gif' })
+      const rawSrc = img.src
+      img.src = URL.createObjectURL(blob)
+      if (rawSrc.startsWith('blob:')) URL.revokeObjectURL(rawSrc)
+
+      pre.textContent = `Rendered ${ props.frames.length } frame(s) at ${ props.maxColors } max colors in ${ time }ms
+Output size: ${ ~~(output.byteLength / 1024) }kb`
+    }
+
+    Array.from(document.querySelectorAll('input')).forEach(input => {
+      const valueEl = input.parentElement.querySelector('.value')
+      const { unit = '', name } = input.dataset
+      input.addEventListener('input', async () => {
+        if (input.type === 'file') {
+          props.frames.forEach(frame => {
+            if (typeof frame.imageData === 'string' && frame.imageData.startsWith('blob:')) {
+              URL.revokeObjectURL(frame.imageData)
+            }
+          })
+          props.frames = []
+          for (let len = input.files.length, i = 0; i < len; i++) {
+            const file = input.files[i]
+            if (file.type === 'image/gif') {
+              const buffer = await file.arrayBuffer()
+              const gif = decode(buffer)
+              // eslint-disable-next-line no-console
+              console.log(gif)
+              props.width = gif.width
+              props.height = gif.height
+              props.frames.push(...(await decodeFrames(buffer, { workerUrl })))
+            } else {
+              const url = URL.createObjectURL(file)
+              props.frames.push({ imageData: url })
+            }
+          }
+          render()
+        } else {
+          const { value } = input
+          if (valueEl) valueEl.textContent = value + unit
+          props[name] = Number(value)
+          render()
+        }
+      })
+    })
+
+    init()
+  </script>
+</body>
+</html>
