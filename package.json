@@ -1,0 +1,69 @@
+{
+  "name": "modern-palette",
+  "type": "module",
+  "version": "2.0.0",
+  "packageManager": "pnpm@8.4.0",
+  "description": "Generate and use color palette through images or color data, consistent with ffmpeg.",
+  "author": "wxm",
+  "license": "MIT",
+  "homepage": "https://github.com/qq15725/modern-palette",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qq15725/modern-palette.git"
+  },
+  "bugs": {
+    "url": "https://github.com/qq15725/modern-palette/issues"
+  },
+  "keywords": [
+    "modern-palette",
+    "palette",
+    "color-quantization",
+    "color-dithering",
+    "ffmpeg",
+    "palettegen",
+    "paletteuse"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "main": "dist/index.mjs",
+  "module": "dist/index.mjs",
+  "types": "types/index.d.ts",
+  "browser": "dist/index.js",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./types/*",
+        "./types/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist",
+    "types"
+  ],
+  "scripts": {
+    "dev": "vite docs",
+    "lint": "eslint src",
+    "test": "vitest --no-threads --no-isolate",
+    "build": "vite build && tsc --project tsconfig.build.json",
+    "build:docs": "vite build docs",
+    "version": "conventional-changelog -p angular -i CHANGELOG.md -s && git add CHANGELOG.md",
+    "release": "bumpp package.json --commit \"release: v%s\" --push --all --tag"
+  },
+  "devDependencies": {
+    "@qq15725/eslint-config": "^1.1.0",
+    "@types/node": "^20.1.0",
+    "bumpp": "^9.1.0",
+    "conventional-changelog-cli": "^2.2.2",
+    "eslint": "^8.40.0",
+    "typescript": "^4.9.5",
+    "vite": "^4.3.5",
+    "vitest": "^0.31.0"
+  }
+}
