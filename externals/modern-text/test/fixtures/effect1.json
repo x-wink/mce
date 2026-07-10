@@ -1,0 +1,22 @@
+{
+  "content": "Effect1",
+  "style": {
+    "fontStyle": "italic",
+    "fontSize": 20,
+    "color": "rgba(254,233,12,255)",
+    "fontWeight": "bold",
+    "textDecoration": "underline"
+  },
+  "effects": [
+    {
+      "translateX": 0.04864864864864865,
+      "translateY": 0.04864864864864865,
+      "skewY": -5,
+      "color": "#000000FF"
+    },
+    {
+      "skewY": -5,
+      "color": "#FEE90CFF"
+    }
+  ]
+}
