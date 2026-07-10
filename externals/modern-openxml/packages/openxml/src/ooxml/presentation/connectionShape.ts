@@ -1,0 +1,69 @@
+import type { NormalizedElement, NormalizedStyle } from 'modern-idoc'
+import type { OoxmlNode, OOXMLQueryType } from '../core'
+import type { NonVisualDrawingProperties } from './nonVisualDrawingProperties'
+import { idGenerator } from 'modern-idoc'
+import { withIndents } from '../utils'
+import { parseNonVisualDrawingProperties, stringifyNonVisualDrawingProperties } from './nonVisualDrawingProperties'
+import { parseNonVisualProperties } from './nonVisualProperties'
+import { parseShapeProperties, stringifyShapeProperties } from './shapeProperties'
+
+export type ConnectionShapeMeta = NonVisualDrawingProperties['meta'] & {
+  inCanvasIs: 'Element2D'
+  inPptIs: 'ConnectionShape'
+  placeholderType?: string
+  placeholderIndex?: string
+}
+
+export interface ConnectionShape extends NormalizedElement {
+  style: NormalizedStyle
+  meta: ConnectionShapeMeta
+}
+
+// p:cxnSp
+export function parseConnectionShape(node?: OoxmlNode, ctx?: any): ConnectionShape | undefined {
+  if (!node)
+    return undefined
+  const { placeholder, ...nvPr } = parseNonVisualProperties(node.find('p:nvCxnSpPr/p:nvPr'), ctx) ?? {}
+  const cNvPr = parseNonVisualDrawingProperties(node.find('p:nvCxnSpPr/p:cNvPr'))
+  ctx = { ...ctx, placeholder }
+  const query = <T = any>(xpath: string, type: OOXMLQueryType = 'node'): T | undefined => {
+    return node.query(xpath, type)
+      ?? node.query(`p:style/${xpath}`, type)
+      ?? placeholder?.node?.query(xpath, type)
+  }
+  const { rawTransform2d: _, ...spPr } = parseShapeProperties(node.find('p:spPr'), {
+    ...ctx,
+    query: (xpath: string, type?: OOXMLQueryType) => query(`p:spPr/${xpath}`, type),
+  }) ?? {}
+  return {
+    id: idGenerator(),
+    ...nvPr,
+    ...cNvPr,
+    ...spPr,
+    style: {
+      ...cNvPr?.style,
+      ...spPr?.style,
+    },
+    meta: {
+      ...cNvPr?.meta,
+      inCanvasIs: 'Element2D',
+      inPptIs: 'ConnectionShape',
+      placeholderType: placeholder?.type,
+      placeholderIndex: placeholder?.index,
+    },
+  }
+}
+
+export function stringifyConnectionShape(sp: ConnectionShape): string {
+  const cNvPr = stringifyNonVisualDrawingProperties(sp)
+  const spPr = stringifyShapeProperties(sp as any)
+
+  return `<p:cxnSp>
+  <p:nvCxnSpPr>
+    ${withIndents(cNvPr, 2)}
+    <p:cNvCxnSpPr/>
+    <p:nvPr/>
+  </p:nvCxnSpPr>
+  ${withIndents(spPr)}
+</p:cxnSp>`
+}

@@ -1,0 +1,54 @@
+export const XML_HEADER = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+
+export function withXmlHeader(str: string): string {
+  return `${XML_HEADER}\n${str}`
+}
+
+export function compressXml(str: string): string {
+  return str
+    .replace(/\n/g, '')
+    .replace(/> +</g, '><')
+    .replace(/ +([:\w]+=".+?")/g, ' $1')
+    .replace(/([:\w]+=".+?") +/g, '$1 ')
+}
+
+export function withAttr(name: string, value?: string | number): string {
+  if (value === undefined)
+    return ''
+  return `${name}="${value}"`
+}
+
+export function withAttrs(attrs: (string | boolean | undefined)[]): string {
+  return attrs.length ? ` ${attrs.filter(Boolean).join(' ')}` : ''
+}
+
+export function withIndents(str: string | (string | boolean | undefined)[] | undefined, deep = 1, ignoreFirstLine = true): string {
+  if (!str) {
+    return ''
+  }
+  const spaces = Array.from({ length: deep }).map(() => '  ').join('')
+  return (typeof str === 'string' ? str.split('\n') : str)
+    .filter(Boolean)
+    .map((v, i) => {
+      return ignoreFirstLine && i === 0 ? v : `${spaces}${v}`
+    })
+    .join('\n')
+}
+
+export function withChildren(tagName: string, content?: string | null): string {
+  return content ? `<${tagName}>${content}</${tagName}>` : ''
+}
+
+/**
+ * 转义 XML 文本内容中的特殊字符。
+ *
+ * 注意:转义 `"` 为 `&quot;` 还能让 compressXml 折叠属性空格的正则失效,
+ * 从而避免文本中形如 `a="b"` 的内容被破坏。
+ */
+export function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
