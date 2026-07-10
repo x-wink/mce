@@ -1,0 +1,107 @@
+# [0.4.0](https://github.com/qq15725/modern-idoc-svg/compare/v0.3.5...v0.4.0) (2026-06-28)
+
+
+
+## [0.3.5](https://github.com/qq15725/modern-idoc-svg/compare/v0.3.4...v0.3.5) (2026-06-24)
+
+
+
+## [0.3.4](https://github.com/qq15725/modern-idoc-svg/compare/v0.3.3...v0.3.4) (2026-06-05)
+
+
+### Features
+
+* render element-level Effect.filter as CSS filter ([08a898f](https://github.com/qq15725/modern-idoc-svg/commit/08a898f266721f8bc525995e64dda783bc9ab904))
+
+
+
+## [0.3.3](https://github.com/qq15725/modern-idoc-svg/compare/v0.3.2...v0.3.3) (2026-05-24)
+
+
+
+## [0.3.2](https://github.com/qq15725/modern-idoc-svg/compare/v0.3.1...v0.3.2) (2026-05-24)
+
+
+
+## [0.3.1](https://github.com/qq15725/modern-idoc-svg/compare/v0.3.0...v0.3.1) (2026-05-24)
+
+
+
+# [0.3.0](https://github.com/qq15725/modern-idoc-svg/compare/v0.2.0...v0.3.0) (2026-05-24)
+
+
+### Features
+
+* support connection/table/chart, upgrade deps ([511baae](https://github.com/qq15725/modern-idoc-svg/commit/511baaed78053411f365aae14e14f10c7a43c71b))
+
+
+
+# [0.2.0](https://github.com/qq15725/modern-idoc-svg/compare/v0.1.0...v0.2.0) (2025-11-04)
+
+
+### Features
+
+* update SvgRenderer ([833be24](https://github.com/qq15725/modern-idoc-svg/commit/833be247575f90703d5557a29e0c4298f22a4838))
+
+
+
+# [0.1.0](https://github.com/qq15725/modern-idoc-svg/compare/v0.0.6...v0.1.0) (2025-11-03)
+
+
+### Features
+
+* text use path d render / idoc rename to doc ([aad5b31](https://github.com/qq15725/modern-idoc-svg/commit/aad5b31c11eddd447178c36867e436018220576f))
+
+
+
+## [0.0.6](https://github.com/qq15725/modern-idoc-svg/compare/v0.0.5...v0.0.6) (2025-07-15)
+
+
+### Features
+
+* up deps ([f16d63f](https://github.com/qq15725/modern-idoc-svg/commit/f16d63f2c1c6d7bd14915c5d5dcd3ee63c40acbe))
+
+
+
+## [0.0.5](https://github.com/qq15725/modern-idoc-svg/compare/v0.0.4...v0.0.5) (2025-07-15)
+
+
+### Bug Fixes
+
+* parseFill ([72c813d](https://github.com/qq15725/modern-idoc-svg/commit/72c813dadaf64b97a28a415c26b9a98c683c729a))
+
+
+
+## [0.0.4](https://github.com/qq15725/modern-idoc-svg/compare/v0.0.3...v0.0.4) (2025-07-08)
+
+
+### Features
+
+* up dep ([14efaa0](https://github.com/qq15725/modern-idoc-svg/commit/14efaa06ebd3f8e42a17b1f7c23a47df64a9dfed))
+
+
+
+## [0.0.3](https://github.com/qq15725/modern-idoc-svg/compare/v0.0.2...v0.0.3) (2025-07-08)
+
+
+### Bug Fixes
+
+* idocToSvgString ([ad7b954](https://github.com/qq15725/modern-idoc-svg/commit/ad7b954333edb87451763ea48de322b26439c765))
+
+
+
+## [0.0.2](https://github.com/qq15725/modern-idoc-svg/compare/v0.0.1...v0.0.2) (2025-07-08)
+
+
+
+## 0.0.1 (2025-07-08)
+
+
+### Features
+
+* init ([6e76797](https://github.com/qq15725/modern-idoc-svg/commit/6e76797ff87149d47780bb54e864d2507852d5c6))
+* up dep ([1ec55ae](https://github.com/qq15725/modern-idoc-svg/commit/1ec55aeff50bfbd1ec293ea4e18c98b28b55db55))
+* update ([ea15a93](https://github.com/qq15725/modern-idoc-svg/commit/ea15a93bf5c713f9a170b61b23c2c879bee4d242))
+
+
+
