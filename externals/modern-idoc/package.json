@@ -1,0 +1,80 @@
+{
+  "name": "modern-idoc",
+  "type": "module",
+  "version": "0.12.3",
+  "packageManager": "pnpm@10.18.1",
+  "description": "Intermediate document for modern codec libs",
+  "author": "wxm",
+  "license": "MIT",
+  "homepage": "https://github.com/qq15725/modern-idoc",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qq15725/modern-idoc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/qq15725/modern-idoc/issues"
+  },
+  "keywords": [
+    "idoc",
+    "intermediate-document",
+    "typescript"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "browser": "./dist/index.js",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/*",
+        "./dist/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build && unbuild",
+    "build:schema": "npx ts-json-schema-generator --minify --expose 'export' --no-top-ref --path 'src/index.ts' --type 'NormalizedDocument' --tsconfig=./tsconfig.json > dist/schema.json",
+    "dev": "vite docs",
+    "lint": "eslint src",
+    "version": "conventional-changelog -p angular -i CHANGELOG.md -s && git add CHANGELOG.md",
+    "release": "bumpp package.json --commit \"release: v%s\" --push --all --tag",
+    "start": "esno src/index.ts",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "prepare": "simple-git-hooks"
+  },
+  "dependencies": {
+    "colord": "^2.9.3",
+    "nanoid": "^5.1.11"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^8.2.0",
+    "@types/node": "^25.6.0",
+    "bumpp": "^11.0.1",
+    "conventional-changelog-cli": "^5.0.0",
+    "eslint": "^10.3.0",
+    "lint-staged": "^16.4.0",
+    "simple-git-hooks": "^2.13.1",
+    "typescript": "^6.0.3",
+    "unbuild": "^3.6.1",
+    "vite": "^8.0.10",
+    "vitest": "^4.1.5"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint-staged"
+  },
+  "lint-staged": {
+    "*": "eslint src --fix"
+  }
+}
