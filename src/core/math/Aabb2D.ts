@@ -1,0 +1,192 @@
+import type { Vector2Like } from 'modern-path2d'
+import { Vector2 } from 'modern-path2d'
+
+export interface RectangleLike {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+/**
+ * AxisAlignedBoundingBox2D
+ */
+export class Aabb2D implements RectangleLike {
+  get x(): number { return this.min.x }
+  set x(val) { this.min.x = val }
+
+  get y(): number { return this.min.y }
+  set y(val) { this.min.y = val }
+
+  get left(): number { return this.min.x }
+  set left(val) { this.min.x = val }
+
+  get top(): number { return this.min.y }
+  set top(val) { this.min.y = val }
+
+  get right(): number { return this.x + this.width }
+  set right(val) { this.size.x = Math.max(0, val - this.min.x) }
+
+  get bottom(): number { return this.y + this.height }
+  set bottom(val) { this.size.y = Math.max(0, val - this.min.y) }
+
+  get width(): number { return this.size.x }
+  set width(val) { this.size.x = Math.max(0, val) }
+
+  get height(): number { return this.size.y }
+  set height(val) { this.size.y = Math.max(0, val) }
+
+  readonly min: Vector2
+  readonly size: Vector2
+  readonly max: Vector2
+
+  constructor()
+  constructor(rect: RectangleLike)
+  constructor(pointArray: Vector2Like[])
+  constructor(min: Vector2Like, size: Vector2Like)
+  constructor(x: number, y: number, width: number, height: number)
+  constructor(...args: any[]) {
+    const min = new Vector2()
+    const size = new Vector2()
+    switch (args.length) {
+      case 0:
+        break
+      case 1: {
+        const arg = args[0]
+        if (Array.isArray(arg)) {
+          const xx = arg.map((p: Vector2Like) => p.x)
+          const yy = arg.map((p: Vector2Like) => p.y)
+          const minX = Math.min(...xx)
+          const maxX = Math.max(...xx)
+          const minY = Math.min(...yy)
+          const maxY = Math.max(...yy)
+          min.set(minX, minY)
+          size.set(maxX - minX, maxY - minY)
+        }
+        else {
+          min.set(arg.x, arg.y)
+          size.set(Math.max(0, arg.width), Math.max(0, arg.height))
+        }
+        break
+      }
+      case 2:
+        min.set(args[0])
+        size.set(Math.max(0, args[1]))
+        break
+      default:
+        min.set(args[0], args[1])
+        size.set(Math.max(0, args[2]), Math.max(0, args[3]))
+        break
+    }
+    this._updateMax = this._updateMax.bind(this)
+    this._updateSize = this._updateSize.bind(this)
+    this.min = new Vector2(min.x, min.y, this._updateMax)
+    this.size = new Vector2(size.x, size.y, this._updateMax)
+    this.max = new Vector2(min.x + size.x, min.y + size.y, this._updateSize)
+  }
+
+  protected _updateSize(): this {
+    this.size.set(
+      this.max.x - this.min.x,
+      this.max.y - this.min.y,
+    )
+    return this
+  }
+
+  protected _updateMax(): this {
+    this.max.set(
+      this.min.x + this.size.x,
+      this.min.y + this.size.y,
+    )
+    return this
+  }
+
+  overlap(rect: Aabb2D, axis?: 'x' | 'y'): boolean {
+    switch (axis) {
+      case 'x':
+        return this.max.x >= rect.min.x
+          && rect.max.x >= this.min.x
+      case 'y':
+        return this.max.y >= rect.min.y
+          && rect.max.y >= this.min.y
+      default:
+        return this.overlap(rect, 'x')
+          && this.overlap(rect, 'y')
+    }
+  }
+
+  contains(value: Aabb2D | Vector2Like): boolean {
+    let min, max
+    if (value instanceof Aabb2D) {
+      min = value.min
+      max = value.max
+    }
+    else {
+      min = value
+      max = value
+    }
+    return this.max.x >= max.x
+      && this.max.y >= max.y
+      && this.min.x <= min.x
+      && this.min.y <= min.y
+  }
+
+  getIntersectionRect(target: Aabb2D): Aabb2D {
+    const minX = Math.max(this.min.x, target.min.x)
+    const minY = Math.max(this.min.y, target.min.y)
+    const maxX = Math.min(this.max.x, target.max.x)
+    const maxY = Math.min(this.max.y, target.max.y)
+    if (maxX <= minX || maxY <= minY) {
+      return new Aabb2D()
+    }
+    return new Aabb2D(
+      minX,
+      minY,
+      Math.max(0, maxX - minX),
+      Math.max(0, maxY - minY),
+    )
+  }
+
+  getArea(): number {
+    return this.width * this.height
+  }
+
+  getCenter(): Vector2 {
+    return new Vector2(
+      this.min.x + this.size.x / 2,
+      this.min.y + this.size.y / 2,
+    )
+  }
+
+  toCssStyle(): { left: string, top: string, width: string, height: string } {
+    return {
+      left: `${this.left}px`,
+      top: `${this.top}px`,
+      width: `${this.width}px`,
+      height: `${this.height}px`,
+    }
+  }
+
+  toArray(): number[] {
+    return [this.x, this.y, this.width, this.height]
+  }
+
+  toJSON(): RectangleLike {
+    return {
+      x: this.x,
+      y: this.y,
+      width: this.width,
+      height: this.height,
+    }
+  }
+
+  clone(): Aabb2D {
+    return new Aabb2D(this.toJSON())
+  }
+
+  destroy(): void {
+    this.min.destroy()
+    this.size.destroy()
+    this.max.destroy()
+  }
+}

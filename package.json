@@ -1,0 +1,106 @@
+{
+  "name": "modern-canvas",
+  "type": "module",
+  "version": "0.26.3",
+  "packageManager": "pnpm@10.19.0",
+  "description": "A JavaScript WebGL rendering engine. only the ESM.",
+  "author": "wxm",
+  "license": "MIT",
+  "homepage": "https://github.com/qq15725/modern-canvas",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qq15725/modern-canvas.git"
+  },
+  "bugs": {
+    "url": "https://github.com/qq15725/modern-canvas/issues"
+  },
+  "keywords": [
+    "modern",
+    "canvas",
+    "webgl",
+    "webgl2"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./*.mjs": "./*.js",
+    "./*": "./*"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "browser": "./dist/index.js",
+  "typings": "dist/index.d.ts",
+  "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "*",
+        "dist/*",
+        "dist/*.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build:code": "vite build",
+    "build:tsc": "NODE_ENV=production tsc --emitDeclarationOnly --project tsconfig.json",
+    "build": "pnpm build:code && pnpm build:tsc",
+    "dev": "vite playground",
+    "lint": "eslint src playground test",
+    "version": "conventional-changelog -p angular -i CHANGELOG.md -s && git add CHANGELOG.md",
+    "release": "pnpm typecheck && pnpm lint && pnpm vitest run && bumpp package.json --commit \"release: v%s\" --push --all --tag",
+    "start": "esno src/index.ts",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "colord": "^2.9.3",
+    "earcut": "^3.2.0",
+    "modern-font": "^0.6.2",
+    "modern-idoc": "^0.12.3",
+    "modern-path2d": "^1.8.7",
+    "modern-text": "^2.1.3"
+  },
+  "peerDependencies": {
+    "echarts": "^5 || ^6",
+    "lottie-web": "^5",
+    "modern-gif": "^2",
+    "yoga-layout": "^3"
+  },
+  "peerDependenciesMeta": {
+    "echarts": {
+      "optional": true
+    },
+    "lottie-web": {
+      "optional": true
+    },
+    "modern-gif": {
+      "optional": true
+    },
+    "yoga-layout": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^9.1.0",
+    "@types/earcut": "^3.0.0",
+    "@types/node": "^26.0.1",
+    "bumpp": "^11.1.0",
+    "conventional-changelog-cli": "^5.0.0",
+    "echarts": "^6.1.0",
+    "eslint": "^10.6.0",
+    "lottie-web": "^5.13.0",
+    "modern-gif": "^2.1.0",
+    "typescript": "^6.0.3",
+    "unbuild": "^3.6.1",
+    "vite": "^8.1.2",
+    "vitest": "^4.1.9",
+    "yoga-layout": "^3.2.1"
+  }
+}
