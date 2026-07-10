@@ -1,0 +1,79 @@
+{
+  "name": "modern-idoc-svg",
+  "type": "module",
+  "version": "0.4.0",
+  "packageManager": "pnpm@10.19.0",
+  "description": "IDoc to SVG renderer",
+  "author": "wxm",
+  "license": "MIT",
+  "homepage": "https://github.com/qq15725/modern-idoc-svg",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qq15725/modern-idoc-svg.git"
+  },
+  "bugs": {
+    "url": "https://github.com/qq15725/modern-idoc-svg/issues"
+  },
+  "keywords": [
+    "idoc",
+    "idoc-to-svg",
+    "typescript"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "browser": "./dist/index.js",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/*",
+        "./dist/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build && unbuild",
+    "dev": "vite playground",
+    "lint": "eslint .",
+    "version": "conventional-changelog -p angular -i CHANGELOG.md -s && git add CHANGELOG.md",
+    "release": "bumpp package.json --commit \"release: v%s\" --push --all --tag",
+    "start": "esno src/index.ts",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "prepare": "simple-git-hooks"
+  },
+  "dependencies": {
+    "modern-idoc": "^0.12.3",
+    "modern-text": "^2.0.9"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^9.0.0",
+    "@types/node": "^25.9.1",
+    "bumpp": "^11.1.0",
+    "conventional-changelog-cli": "^5.0.0",
+    "eslint": "^10.4.0",
+    "lint-staged": "^17.0.5",
+    "simple-git-hooks": "^2.13.1",
+    "typescript": "^6.0.3",
+    "unbuild": "^3.6.1",
+    "vite": "^8.0.14",
+    "vitest": "^4.1.7"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint-staged"
+  },
+  "lint-staged": {
+    "*": "eslint --fix"
+  }
+}
